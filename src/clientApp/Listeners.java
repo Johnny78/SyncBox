@@ -12,7 +12,6 @@ public class Listeners implements ActionListener{
 		File serverXML = new File("/C:/Users/John/workspace/SyncBox/src/clientApp/xml examples/server.xml");
 		File clientXML = new File ("/C:/Users/John/workspace/SyncBox/src/clientApp/xml examples/client.xml");
 		
-		XMLComparer.compare(serverXML, clientXML);
 		//get xml files from local disk
 		
 		

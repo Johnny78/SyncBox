@@ -1,8 +1,12 @@
 package server;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -25,11 +29,23 @@ public class SyncBoxServer {
 				
 				String clientCommand = inFromClient.readLine();
 				
-				if (clientCommand.equals("quit")){
-					clientConnected = false;
-					System.out.println("exiting");
+				switch (clientCommand){
+					case "quit":
+						clientConnected = false;
+						System.out.println("exiting");
+					case "get metadata":
+						 File transferFile = new File ("metadata.xml");
+			              byte [] bytearray  = new byte [(int)transferFile.length()];
+			              FileInputStream fin = new FileInputStream(transferFile);
+			              BufferedInputStream bin = new BufferedInputStream(fin);
+			              bin.read(bytearray,0,bytearray.length);
+			              OutputStream os = clientSocket.getOutputStream();
+			              //System.out.println("Sending Files...");
+			              os.write(bytearray,0,bytearray.length);
+			              os.flush();
+			         
 				}
-				else if (clientCommand != null){
+				if (clientCommand != null){
 					System.out.println(clientCommand);
 				}
 			}

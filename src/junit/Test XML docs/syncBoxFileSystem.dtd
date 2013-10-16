@@ -1,0 +1,8 @@
+<!ELEMENT RootDir ((file|dir)*)>
+<!ELEMENT dir ((file|dir)*)>
+<!ELEMENT file EMPTY>
+<!ATTLIST file hash CDATA #REQUIRED>
+<!ATTLIST file name CDATA #REQUIRED>
+<!ATTLIST RootDir name CDATA #REQUIRED>
+<!ATTLIST dir name CDATA #REQUIRED>
+
