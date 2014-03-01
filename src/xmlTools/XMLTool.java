@@ -21,6 +21,8 @@ public class XMLTool {
 	 * Compares 2 metadata xml files and returns a list of commands needed to reestablish mirrored folders
 	 * 
 	 *  needs improving for folders within the root folder
+	 *  
+	 *  small edit for test
 	 * @param recentFile
 	 * @param oldFile
 	 * @param deletedList
