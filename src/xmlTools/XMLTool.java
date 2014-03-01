@@ -2,6 +2,8 @@ package xmlTools;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.FactoryConfigurationError;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -10,6 +12,8 @@ import org.w3c.dom.Element;
 
 import java.io.File;
 import java.util.ArrayList;
+
+import md5hash.HashMd5;
 
 public class XMLTool {
 	
@@ -88,7 +92,45 @@ public class XMLTool {
 	}
 
 	
-	public static File generateXML(String filepath){
-		return new File("c:/t.txt");
+	public static void generateXML(String filepath) throws Exception{
+		//Create DOM object
+		Document doc = null;
+		try {
+		       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		       DocumentBuilder builder = factory.newDocumentBuilder();
+		       doc = builder.newDocument();
+		      }
+		      catch (FactoryConfigurationError fce){
+			  System.err.println("Could not create DocumentBuilderFactory");
+		      }
+		      catch (ParserConfigurationException pce) { 
+		          System.out.println("Could not locate a JAXP parser"); 
+		      }
+		//Get file elements
+		Element root = doc.createElement("RootDir");
+		root.setAttribute("name", "SynchBox");
+        doc.appendChild(root);
+        root.appendChild( doc.createTextNode("\n") );
+        
+        //Get list of files
+        File sBox = new File(filepath);
+        File[] li = sBox.listFiles();
+        
+        //extract names and generate hash
+        String path;
+        String name;
+        String hexHash;
+        for (int i = 0; i>li.length; i++){
+        	
+        	path = li[i].getAbsolutePath();
+        	name = li[i].getName();
+        	hexHash = HashMd5.generateHash(path);
+        	System.out.println(path+"\n"+name+"\n"+hexHash);
+        	
+        }
+        
+        //Write to file
+        (new SerializeHack(doc, new File("fileMetaData.xml"))).write();
+
 	}
 }
