@@ -91,7 +91,13 @@ public class XMLTool {
 		return commands;
 	}
 
-	
+/**
+ * generateXML will read the state of a directory
+ * and generate an XML file containing file names and hashcodes.
+ * the xml file is created in the working directory.
+ * @param filepath
+ * @throws Exception
+ */
 	public static void generateXML(String filepath) throws Exception{
 		//Create DOM object
 		Document doc = null;
@@ -120,12 +126,17 @@ public class XMLTool {
         String path;
         String name;
         String hexHash;
-        for (int i = 0; i>li.length; i++){
-        	
+        
+        for (int i = 0; i<li.length; i++){      	
         	path = li[i].getAbsolutePath();
         	name = li[i].getName();
         	hexHash = HashMd5.generateHash(path);
-        	System.out.println(path+"\n"+name+"\n"+hexHash);
+        	//System.out.println(path+"\n"+name+"\n"+hexHash);
+        	Element el = doc.createElement("file");
+        	el.setAttribute("name", name);
+        	el.setAttribute("hash", hexHash);
+        	root.appendChild(el);
+            root.appendChild( doc.createTextNode("\n") );
         	
         }
         
