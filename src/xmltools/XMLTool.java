@@ -1,4 +1,4 @@
-package xmlTools;
+package xmltools;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
@@ -143,7 +143,7 @@ public class XMLTool {
         }
         
         //Write to file
-        (new SerializeHack(doc, new File("fileMetaData.xml"))).write();
+        (new SerializeHack(doc, new File(filepath +"\\fileMetaData.xml"))).write();
 
 	}
 }

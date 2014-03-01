@@ -1,4 +1,4 @@
-package junit;
+package junit.xmltests;
 
 
 import static org.junit.Assert.*;
@@ -10,10 +10,8 @@ import xmlTools.XMLTool;
 public class XMLGen {
 
 	@Test
-	public void testGenerateXML() throws Exception {
-		
+	public void testGenerateXML() throws Exception {	
 		XMLTool.generateXML("C:\\Users\\John\\Dropbox\\My Documents\\University\\3rd year\\Final year project\\SyncBox");
-		assertTrue(true);
+		assertTrue(true);	//manually check the output file
 	}
-
 }

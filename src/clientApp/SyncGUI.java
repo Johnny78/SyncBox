@@ -16,8 +16,7 @@ public class SyncGUI extends JFrame{
 		JButton button = new JButton("Sync");
 		button.addActionListener(new Listeners());
 		pane.add(button);
-		
-		
+	
 		this.pack();
 	}
 	public static void main(String[] args){

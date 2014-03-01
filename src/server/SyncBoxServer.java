@@ -10,6 +10,8 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import xmltools.XMLTool;
+
 public class SyncBoxServer {
 
 	private int port;
@@ -34,6 +36,10 @@ public class SyncBoxServer {
 						clientConnected = false;
 						System.out.println("exiting");
 					case "get metadata":
+						 //generate meta data
+						String dir = System.getProperty("user.dir");
+						dir = dir + "\\SyncBox";
+						XMLTool.generateXML(dir);
 						 File transferFile = new File ("metadata.xml");
 			              byte [] bytearray  = new byte [(int)transferFile.length()];
 			              FileInputStream fin = new FileInputStream(transferFile);
@@ -43,7 +49,12 @@ public class SyncBoxServer {
 			              //System.out.println("Sending Files...");
 			              os.write(bytearray,0,bytearray.length);
 			              os.flush();
-			         
+					case "send file":
+						//todo
+					case "receive file":
+						//todo
+					case "delete file":
+						//todo
 				}
 				if (clientCommand != null){
 					System.out.println(clientCommand);
