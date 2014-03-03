@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -15,49 +16,76 @@ import xmltools.XMLTool;
 public class SyncBoxServer {
 
 	private int port;
-	
+	private boolean clientConnected;
+	private String syncBoxDir = "server\\SyncBox";
+	private String metaDataDir = "server\\metadata.xml";
+
+
 	public void run (int port) throws Exception{
+
 		boolean serving = true;
 		ServerSocket welcomeSocket = new ServerSocket(port);
-		
+
 		while (serving){
-			System.out.println("serving");
+			System.out.println("*************");
+			System.out.println("Serving...");
 			Socket clientSocket = welcomeSocket.accept();
-			System.out.println("welcome client !");
+			System.out.println("Client connected");
+
 			DataOutputStream outToClient = new DataOutputStream(clientSocket.getOutputStream());
-			boolean clientConnected = true;
 			BufferedReader inFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+			clientConnected = true;
+
 			while (clientConnected){
-				
+
 				String clientCommand = inFromClient.readLine();
-				
+
 				switch (clientCommand){
-					case "quit":
-						clientConnected = false;
-						System.out.println("exiting");
-					case "get metadata":
-						 //generate meta data
-						String dir = System.getProperty("user.dir");
-						dir = dir + "\\SyncBox";
-						XMLTool.generateXML(dir);
-						 File transferFile = new File ("metadata.xml");
-			              byte [] bytearray  = new byte [(int)transferFile.length()];
-			              FileInputStream fin = new FileInputStream(transferFile);
-			              BufferedInputStream bin = new BufferedInputStream(fin);
-			              bin.read(bytearray,0,bytearray.length);
-			              OutputStream os = clientSocket.getOutputStream();
-			              //System.out.println("Sending Files...");
-			              os.write(bytearray,0,bytearray.length);
-			              os.flush();
-					case "send file":
-						//todo
-					case "receive file":
-						//todo
-					case "delete file":
-						//todo
-				}
-				if (clientCommand != null){
-					System.out.println(clientCommand);
+								
+				case "get metadata":
+					System.out.println("Generating metadata");
+
+					//generate meta data
+					XMLTool.generateXML(syncBoxDir);
+
+					File f = new File (metaDataDir);
+					if (!f.exists()){
+						System.out.println("No metadata file found");
+					}
+					else{						
+						RandomAccessFile raf = new RandomAccessFile(metaDataDir, "r");
+						byte[] data = null;
+						int length = 0;
+						try{
+							long longlength = raf.length();
+							length = (int) longlength;
+							data = new byte[length];
+							raf.readFully(data);
+						} 
+						finally {
+							raf.close();
+						}
+						outToClient.writeInt(data.length);
+						outToClient.write(data);
+						System.out.println(length + " bytes of metadata sent");
+					}
+					
+
+
+				case "send file":
+					//todo
+				case "receive file":
+					//todo
+				case "delete file":
+					//todo
+				case "quit":
+					clientConnected = false;
+					outToClient.writeBytes("Ending connection\n");
+					clientSocket.close();
+					System.out.println("Exiting\n\n");
+					
+
 				}
 			}
 		}

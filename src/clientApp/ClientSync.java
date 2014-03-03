@@ -1,58 +1,56 @@
 package clientApp;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.Socket;
+
 
 public class ClientSync {
 
 	private String serverAddress;
 	private int serverPort;
 	private Socket clientSocket;
-	
+	private DataOutputStream outToServer;
+	private DataInputStream dis;
+	private BufferedReader inFromServer;
+
 	public ClientSync(String serverAddress, int serverPort) throws Exception{
-		System.out.println("creating client");
 		this.serverAddress = serverAddress;
 		this.serverPort = serverPort;
 	}
-	
+
 	public void connect() throws Exception{
 		try{
-			
+
 			clientSocket = new Socket(serverAddress, serverPort);
-			System.out.println("attempting to connect");
-			DataOutputStream outToClient = new DataOutputStream(clientSocket.getOutputStream());
+			System.out.println("Connecting...");
+			outToServer = new DataOutputStream(clientSocket.getOutputStream());
+			inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			dis = new DataInputStream(clientSocket.getInputStream());
+			outToServer.writeBytes("get metadata\n");
+			System.out.println("Asking for metadata");
 			
-			outToClient.writeBytes("get metadata");
+			int len = dis.readInt();
+			byte[] data = new byte[len];
+			if (len > 0) {
+				dis.read(data);
+			}
+
+		    FileOutputStream fileOuputStream = 
+	                  new FileOutputStream("client\\ServerMetaData.xml"); 
+		    fileOuputStream.write(data);
+		    fileOuputStream.close();
+			System.out.println(len + " bytes of metadata recieved");
 			
-			//receive xmlfile
-			
-			int bytesRead = 0;
-			int currentTotal = 0;
-			int bufferSize = 0;
-			
-	        byte [] bytearray  = new byte [bufferSize];
-	        InputStream is = clientSocket.getInputStream();
-	        FileOutputStream fos = new FileOutputStream("copy.doc");
-	        BufferedOutputStream bos = new BufferedOutputStream(fos);
-	        bytesRead = is.read(bytearray,0,bytearray.length);
-	        currentTotal = bytesRead;
-	 
-	        do {
-	           bytesRead =
-	              is.read(bytearray, currentTotal, (bytearray.length-currentTotal));
-	           if(bytesRead >= 0) currentTotal += bytesRead;
-	        } while(bytesRead > -1);
-	 
-	        bos.write(bytearray, 0 , currentTotal);
-	        bos.flush();
-	        bos.close();
-			
-			//compare xmlfile
-			
-			outToClient.writeBytes("quit");
+
+			outToServer.writeBytes("quit\n");
+			String response = inFromServer.readLine();
+			System.out.println(response);
 
 		}
 		catch (Exception e){

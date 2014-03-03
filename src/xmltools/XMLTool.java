@@ -101,6 +101,10 @@ public class XMLTool {
  * @throws Exception
  */
 	public static void generateXML(String filepath) throws Exception{
+		File sBox = new File(filepath);
+		if (!sBox.exists()){
+			System.out.println("No such file !");
+		}
 		//Create DOM object
 		Document doc = null;
 		try {
@@ -121,7 +125,7 @@ public class XMLTool {
         root.appendChild( doc.createTextNode("\n") );
         
         //Get list of files
-        File sBox = new File(filepath);
+        sBox = new File(filepath);
         File[] li = sBox.listFiles();
         
         //extract names and generate hash
@@ -143,7 +147,11 @@ public class XMLTool {
         }
         
         //Write to file
-        (new SerializeHack(doc, new File(filepath +"\\fileMetaData.xml"))).write();
+        File sBoxFolder = new File(filepath);
+        File parent = sBoxFolder.getParentFile();
+        String parentPath = parent.getPath();
+        
+        (new SerializeHack(doc, new File(parentPath +"\\metadata.xml") )).write();
 
 	}
 }

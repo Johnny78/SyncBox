@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import xmlTools.XMLTool;
+import xmltools.XMLTool;
 
 public class XMLGen {
 
