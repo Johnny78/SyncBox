@@ -42,11 +42,9 @@ public class SyncBoxServer {
 				String clientCommand = inFromClient.readLine();
 
 				switch (clientCommand){
-								
+				
 				case "get metadata":
 					System.out.println("Generating metadata");
-
-					//generate meta data
 					XMLTool.generateXML(syncBoxDir);
 
 					File f = new File (metaDataDir);
@@ -70,22 +68,46 @@ public class SyncBoxServer {
 						outToClient.write(data);
 						System.out.println(length + " bytes of metadata sent");
 					}
-					
+					break;
 
 
 				case "send file":
-					//todo
-				case "receive file":
-					//todo
-				case "delete file":
-					//todo
+					String fileName = inFromClient.readLine();
+					fileName = syncBoxDir + "\\" + fileName;
+					f = new File(fileName);
+					if (!f.exists()){
+						System.out.println("No such File");
+					}
+					else{
+						RandomAccessFile raf = new RandomAccessFile(fileName, "r");
+						byte[] buff = new byte[8192];
+						try{
+							long length = raf.length();
+							outToClient.writeLong(length);
+							while ((raf.read(buff, 0, 8192)) != -1){
+								outToClient.write(buff);
+							}
+						} 
+						finally {
+							raf.close();
+							outToClient.flush();
+						}
+						System.out.println(fileName+" sent");		
+					}
+					break;
+
+					//					
+					//					//todo
+					//				case "receive file":
+					//					//todo
+					//				case "delete file":
+					//					//todo
 				case "quit":
 					clientConnected = false;
 					outToClient.writeBytes("Ending connection\n");
 					clientSocket.close();
 					System.out.println("Exiting\n\n");
-					
-
+					break;
 				}
 			}
 		}
