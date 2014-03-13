@@ -2,9 +2,11 @@ package server;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
@@ -17,8 +19,9 @@ public class SyncBoxServer {
 
 	private int port;
 	private boolean clientConnected;
-	private String syncBoxDir = "server\\SyncBox";
+	private String syncBoxDir = "server\\SyncBox\\";
 	private String metaDataDir = "server\\metadata.xml";
+	private String deletedDir = "server\\deleted\\";
 
 
 	public void run (int port) throws Exception{
@@ -42,7 +45,7 @@ public class SyncBoxServer {
 				String clientCommand = inFromClient.readLine();
 
 				switch (clientCommand){
-				
+
 				case "get metadata":
 					System.out.println("Generating metadata");
 					XMLTool.generateXML(syncBoxDir);
@@ -73,7 +76,7 @@ public class SyncBoxServer {
 
 				case "send file":
 					String fileName = inFromClient.readLine();
-					fileName = syncBoxDir + "\\" + fileName;
+					fileName = syncBoxDir + fileName;
 					f = new File(fileName);
 					if (!f.exists()){
 						System.out.println("No such File");
@@ -96,12 +99,57 @@ public class SyncBoxServer {
 					}
 					break;
 
-					//					
-					//					//todo
-					//				case "receive file":
-					//					//todo
-					//				case "delete file":
-					//					//todo
+
+
+				case "recieve file":
+					try{
+						outToClient.writeBytes("Server Ready\n");
+						fileName = inFromClient.readLine();
+						System.out.println("Receiving file "+ fileName);
+
+						DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+						long len = dis.readLong();
+						byte[] buff = new byte[8192];
+						int result, read = 0;
+						FileOutputStream fileOuputStream = 
+								new FileOutputStream(syncBoxDir + fileName);
+
+						do {
+							result = dis.read(buff);
+							read += result;
+							fileOuputStream.write(buff);
+							//System.out.println("read so far: "+read);
+						}
+						while (read < len && result!= -1);			
+						fileOuputStream.close();
+						System.out.println(len + " bytes recieved from file "+fileName);
+					}
+					catch (Exception e){
+						e.printStackTrace();
+					}
+					break;
+					
+
+				case "delete":
+					try{
+						outToClient.writeBytes("Server Ready\n");
+						fileName = inFromClient.readLine();
+						File f1 = new File(syncBoxDir+fileName);
+						if (f1.exists()){
+							System.out.println("deleting file "+ fileName);
+							if(f1.renameTo(new File(deletedDir + fileName))){
+								System.out.println("File moved successfully!");
+							}else{
+								System.out.println("File has failed to move to deleted folder!");
+							}
+						}
+					}
+					catch (Exception e){
+						e.printStackTrace();
+					}
+					break;
+
+
 				case "quit":
 					clientConnected = false;
 					outToClient.writeBytes("Ending connection\n");
