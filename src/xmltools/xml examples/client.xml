@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<!DOCTYPE RootDir SYSTEM "syncBoxFileSystem.dtd">
-<RootDir name="SyncBox">
-	<file hash="1234" name="file2.txt"/>
-</RootDir>

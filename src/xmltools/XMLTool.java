@@ -18,72 +18,116 @@ import md5hash.HashMd5;
 public class XMLTool {
 	
 	/**
-	 * Compares 2 metadata xml files and returns a list of commands needed to reestablish mirrored folders
+	 * Compares 2 metadata xml files and returns a list of commands needed to establish mirrored folders
 	 * 
 	 *  needs improving for folders within the root folder
 	 *  
-	 *  small edit for test
-	 * @param recentFile
-	 * @param oldFile
+	 * @param serverXML
+	 * @param clientXML
 	 * @param deletedList
 	 * @return list of commands Strings
 	 */
-	public static ArrayList<String> compare(File recentFile, File oldFile, ArrayList<String> deletedList){
+	public static ArrayList<String> compare(File serverXML, File clientXML, ArrayList<String> deletedList){
 		
 		ArrayList<String> commands = new ArrayList<String>();
 		try{
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-			Document recentDoc = dBuilder.parse(recentFile);
-			Document oldDoc = dBuilder.parse(oldFile);
+			Document recentDoc = dBuilder.parse(serverXML);
+			Document oldDoc = dBuilder.parse(clientXML);
 			
-			Element rootElementR = recentDoc.getDocumentElement();
-			Element rootElementO = oldDoc.getDocumentElement();
+			Element rootElementS = recentDoc.getDocumentElement();
+			Element rootElementC = oldDoc.getDocumentElement();
 			
-			NodeList rNodes = rootElementR.getChildNodes();
-			NodeList oNodes = rootElementO.getChildNodes();
+			NodeList sNodes = rootElementS.getChildNodes();
+			NodeList cNodes = rootElementC.getChildNodes();
 			
-			ArrayList<Element> rElements = new ArrayList<Element>();
-			for (int i=0; i < rNodes.getLength(); i++){
-				if (rNodes.item(i) instanceof Element){
-					rElements.add((Element) rNodes.item(i));
+			// create list of server files
+			ArrayList<Element> sElements = new ArrayList<Element>();
+			for (int i=0; i < sNodes.getLength(); i++){
+				if (sNodes.item(i) instanceof Element){
+					sElements.add((Element) sNodes.item(i));
+				}
+			}
+			//create list of client files
+			ArrayList<Element> cElements = new ArrayList<Element>();	
+			for (int i=0; i < cNodes.getLength(); i++){
+				if (cNodes.item(i) instanceof Element){
+					cElements.add((Element) cNodes.item(i));
 				}
 			}
 			
-			ArrayList<Element> oElements = new ArrayList<Element>();	
-			for (int i=0; i < oNodes.getLength(); i++){
-				if (oNodes.item(i) instanceof Element){
-					oElements.add((Element) oNodes.item(i));
+			Element serverElem, clientElem;
+			
+			boolean comparing = true;
+			
+			while(comparing){
+				if(cElements.size()>0 && sElements.size()>0){
+					clientElem = cElements.remove(0);
+					String name = clientElem.getAttribute("name");
+					String hash = clientElem.getAttribute("hash");
+					long lastmod = Long.parseLong(clientElem.getAttribute("lastModified"));
+					boolean match = false;
+					int counter = 0;								//search for a match in server list
+					while (!match && counter < sElements.size()){
+						serverElem = sElements.get(counter);
+						counter++;
+//						System.out.println(name +" vs "+ serverElem.getAttribute("name"));
+						if (serverElem.getAttribute("name").equals(name)){
+							if (serverElem.getAttribute("hash").equals(hash)){			
+								match = true;						//identical file server & client
+								sElements.remove(counter-1);
+							}
+							else{
+								long slastmod = Long.parseLong(serverElem.getAttribute("lastModified")); 
+								if(lastmod > slastmod){ 		//if client version is more recent
+									commands.add("DeleteServerCopyNoLog "+name);
+									commands.add("Export "+ name);
+									match = true;
+									sElements.remove(counter-1);
+								}
+								else{
+									commands.add("DeleteClientCopy "+ name);
+									commands.add("Import "+ name);
+									match = true;
+									sElements.remove(counter-1);
+								}
+							}				
+						}
+						//todo improve deletion detection to check hash and date
+						else if (deletedList.contains(name)){
+							commands.add("DeleteClientCopy "+ name);
+							match = true;
+						}
+						else{
+							commands.add("Export "+ name);
+							match = true;
+						}
+					}
 				}
-			}
-			
-			Element oldElem, recentElem;
-			String rpath = "/" + rootElementR.getAttribute("name");
-			String opath = "/" + rootElementO.getAttribute("name");
-			
-			while (rElements.size()>0 && oElements.size()>0){
-				oldElem = oElements.remove(0);
-				recentElem = rElements.remove(0);
-			
-				//System.out.println("comparing "+recentElem.getAttribute("name")+" with "+oldElem.getAttribute("name"));
-				
-				if (!oldElem.getAttribute("hash").equals(recentElem.getAttribute("hash"))){
-					if(deletedList.contains(oldElem.getAttribute("hash"))){
-						rElements.add(0, recentElem);
-						commands.add("Delete "+ opath + "/" +oldElem.getAttribute("name"));
+				if(cElements.size() == 0 && sElements.size() == 0){
+					comparing = false;								// Finished
+				}
+				else if (cElements.size() > 0){						// elements remaining in client list
+					clientElem = cElements.remove(0);
+					String name = clientElem.getAttribute("name");
+					if (deletedList.contains(name)){
+						commands.add("DeleteClientCopy "+ name);
 					}
 					else{
-						oElements.add(0, oldElem);
-						commands.add("Import "+ rpath + "/" + recentElem.getAttribute("name"));
+						commands.add("Export "+name);
 					}
 				}
+				else{												//elements remaining in server list
+					serverElem = sElements.remove(0);
+					String name = serverElem.getAttribute("name");
+					commands.add("Import "+name);
+					
+				}
 			}
-			while (rElements.size()>0){
-				
-				recentElem = 
-						rElements.remove(0);
-				commands.add("Import "+ rpath+ "/" + recentElem.getAttribute("name"));
-			}
+
+			
+
 		}
 		catch (Exception e){
 			System.out.println(e);
@@ -120,7 +164,7 @@ public class XMLTool {
 		      }
 		//Get file elements
 		Element root = doc.createElement("RootDir");
-		root.setAttribute("name", "SynchBox");
+		root.setAttribute("name", "syncBox");
         doc.appendChild(root);
         root.appendChild( doc.createTextNode("\n") );
         
@@ -132,15 +176,18 @@ public class XMLTool {
         String path;
         String name;
         String hexHash;
+        long lastmod;
         
         for (int i = 0; i<li.length; i++){      	
         	path = li[i].getAbsolutePath();
         	name = li[i].getName();
+        	lastmod = li[i].lastModified();
         	hexHash = HashMd5.generateHash(path);
         	//System.out.println(path+"\n"+name+"\n"+hexHash);
         	Element el = doc.createElement("file");
         	el.setAttribute("name", name);
         	el.setAttribute("hash", hexHash);
+        	el.setAttribute("lastModified", Long.toString(lastmod));
         	root.appendChild(el);
             root.appendChild( doc.createTextNode("\n") );
         	

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<RootDir name="SyncBox">
+	<file hash="123" name="file1.txt"/>
+	<file hash="4949e56d376cc80ce5387e8e89a75396" name="file2.txt"/>
+	<file hash="12345" name="file3.txt"/>
+</RootDir>
+

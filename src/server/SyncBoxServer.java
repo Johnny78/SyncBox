@@ -8,20 +8,28 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 
 import xmltools.XMLTool;
 
-public class SyncBoxServer {
+public class SyncBoxServer implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3820360252850625238L;
 	private int port;
 	private boolean clientConnected;
-	private String syncBoxDir = "server\\SyncBox\\";
+	private String syncBoxDir = "server\\syncbox\\";
 	private String metaDataDir = "server\\metadata.xml";
-	private String deletedDir = "server\\deleted\\";
+	private String delLogDir = "server\\deleted.obj";
 
 
 	public void run (int port) throws Exception{
@@ -43,6 +51,7 @@ public class SyncBoxServer {
 			while (clientConnected){
 
 				String clientCommand = inFromClient.readLine();
+				System.out.println(clientCommand);
 
 				switch (clientCommand){
 
@@ -73,6 +82,35 @@ public class SyncBoxServer {
 					}
 					break;
 
+				case "get deleted":
+
+					f = new File (delLogDir);
+					if (!f.exists()){
+						f.createNewFile();
+						System.out.println("generating empty log");
+						ArrayList<String> deleted = new ArrayList<String>();													
+						FileOutputStream fos = new FileOutputStream("server\\deleted.obj");
+						ObjectOutputStream oos = new ObjectOutputStream(fos);
+						oos.writeObject(deleted);
+						oos.close();
+					}					
+					RandomAccessFile raf = new RandomAccessFile(delLogDir, "r");
+					byte[] data = null;
+					int length = 0;
+					try{
+						long longlength = raf.length();
+						length = (int) longlength;
+						data = new byte[length];
+						raf.readFully(data);
+					} 
+					finally {
+						raf.close();
+					}
+					outToClient.writeInt(data.length);
+					outToClient.write(data);
+					System.out.println(length + " bytes of metadata sent");
+					break;
+
 
 				case "send file":
 					String fileName = inFromClient.readLine();
@@ -82,11 +120,11 @@ public class SyncBoxServer {
 						System.out.println("No such File");
 					}
 					else{
-						RandomAccessFile raf = new RandomAccessFile(fileName, "r");
+						raf = new RandomAccessFile(fileName, "r");
 						byte[] buff = new byte[8192];
 						try{
-							long length = raf.length();
-							outToClient.writeLong(length);
+							long length1 = raf.length();
+							outToClient.writeLong(length1);
 							while ((raf.read(buff, 0, 8192)) != -1){
 								outToClient.write(buff);
 							}
@@ -128,20 +166,71 @@ public class SyncBoxServer {
 						e.printStackTrace();
 					}
 					break;
-					
 
-				case "delete":
+
+				case "delete file":
 					try{
 						outToClient.writeBytes("Server Ready\n");
 						fileName = inFromClient.readLine();
+						System.out.println(fileName);
 						File f1 = new File(syncBoxDir+fileName);
+
 						if (f1.exists()){
 							System.out.println("deleting file "+ fileName);
-							if(f1.renameTo(new File(deletedDir + fileName))){
-								System.out.println("File moved successfully!");
+							if(f1.delete()){
+
+								//add delted file name to log								
+								ArrayList<String> deleted = null;
+								File deletedArray = new File("server\\deleted.obj");
+								if (deletedArray.exists()){
+									FileInputStream fis = new FileInputStream("server\\deleted.obj");
+									ObjectInputStream ois = new ObjectInputStream(fis);
+									deleted = (ArrayList<String>) ois.readObject();
+									ois.close();
+								}
+								else{
+									deleted = new ArrayList<String>();
+								}							
+								deleted.add(fileName);
+								FileOutputStream fos = new FileOutputStream("server\\deleted.obj");
+								ObjectOutputStream oos = new ObjectOutputStream(fos);
+								oos.writeObject(deleted);
+								oos.close();								
+
+								outToClient.writeBytes("Delete Successful\n");
 							}else{
-								System.out.println("File has failed to move to deleted folder!");
+								System.out.println("Delete failed");
+								outToClient.writeBytes("Delete or move failed\n");
 							}
+						}
+						else{
+							System.out.println("no such file available for delete");
+						}
+					}
+					catch (Exception e){
+						e.printStackTrace();
+					}
+					break;
+					
+					
+				case "delete file no log":
+					try{
+						outToClient.writeBytes("Server Ready\n");
+						fileName = inFromClient.readLine();
+						System.out.println(fileName);
+						File f1 = new File(syncBoxDir+fileName);
+
+						if (f1.exists()){
+							System.out.println("deleting file "+ fileName);
+							if(f1.delete()){
+								outToClient.writeBytes("Delete Successful\n");
+							}else{
+								System.out.println("Delete failed");
+								outToClient.writeBytes("Delete or move failed\n");
+							}
+						}
+						else{
+							System.out.println("no such file available for delete");
 						}
 					}
 					catch (Exception e){
