@@ -13,7 +13,7 @@ import org.w3c.dom.Element;
 import java.io.File;
 import java.util.ArrayList;
 
-import md5hash.HashMd5;
+import security.HashMd5;
 
 public class XMLTool {
 	
