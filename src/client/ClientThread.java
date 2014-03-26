@@ -1,4 +1,4 @@
-package clientApp;
+package client;
 
 public class ClientThread {
 	

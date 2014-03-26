@@ -13,7 +13,13 @@ public class PassPrompt extends JPanel implements ActionListener {
 	private char[] password;
 	private boolean entered = false;
 	
-	public PassPrompt(JFrame f){
+	public PassPrompt(){
+		JFrame frame = new JFrame("SyncBox password");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		PassPromptCons(frame);
+	}
+	
+	public void PassPromptCons(JFrame f){
 		parentFrame = f;
 		
 		passwordField = new JPasswordField(10);
@@ -73,20 +79,17 @@ public class PassPrompt extends JPanel implements ActionListener {
 	}
 	
 	
-	public char[] getPassword() {
+	private char[] getPassword() {
 		return password;
 	}
 
-	public boolean isEntered() {
+	private boolean isEntered() {
 		return entered;
 	}
 	
 
-	public static void main(String[] args){
-		JFrame frame = new JFrame("SyncBox password");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		PassPrompt pp = new PassPrompt(frame);
-		while(!pp.isEntered()){
+	public char[] getUserPassword(){
+		while(!isEntered()){
 			Thread.yield();
 			try {
 				Thread.sleep(1000);				//wait for user to type password
@@ -94,11 +97,7 @@ public class PassPrompt extends JPanel implements ActionListener {
 				e.printStackTrace();
 			}
 		}
-		char[] pass = pp.getPassword();
-		for (int i=0; i<pass.length; i++){
-			System.out.print(pass[i]);
-		}	
-		pp.close();
-		System.exit(0);
+		return getPassword();
+
 	}
 }

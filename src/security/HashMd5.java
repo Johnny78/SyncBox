@@ -1,4 +1,4 @@
-package md5hash;
+package security;
 
 import java.io.FileInputStream;
 import java.security.MessageDigest;

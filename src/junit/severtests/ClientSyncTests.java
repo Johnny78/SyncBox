@@ -5,11 +5,12 @@ import static org.junit.Assert.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 
 import org.junit.Test;
 
-import clientApp.*;
-import server.*;
+import client.ClientControl;
+
 
 public class ClientSyncTests {
 	String fileName = "myFile.txt";
@@ -24,10 +25,27 @@ public class ClientSyncTests {
 		(new File("client\\ServerMetaData.xml")).delete();
 		(new File("client\\deleted.obj")).delete();
 		(new File("client\\syncBox\\myFile.txt")).delete();
-		(new File("server\\syncBox\\myFile.txt")).delete();
-		
-		
-
+		(new File("server\\syncBox\\myFile.txt")).delete();	
+	}
+	
+	public void createServerFile() throws IOException{
+		String content = "This is the server file content";
+		File file = new File("server\\syncBox\\"+ fileName);
+		file.createNewFile();
+		FileWriter fw = new FileWriter(file.getAbsoluteFile());
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write(content);
+		bw.close();
+	}
+	
+	public void createClientFile() throws IOException{
+		String content = "This is the server file content";
+		File file = new File("client\\syncBox\\"+ fileName);
+		file.createNewFile();
+		FileWriter fw = new FileWriter(file.getAbsoluteFile());
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write(content);
+		bw.close();
 	}
 	
 	@Test

@@ -1,4 +1,4 @@
-package clientApp;
+package client;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -146,6 +146,7 @@ public class ClientControl {
 					outToServer.writeLong(length);
 					while ((raf.read(buff, 0, 8192)) != -1){
 						outToServer.write(buff);
+						outToServer.flush();
 					}
 				} 
 				finally {

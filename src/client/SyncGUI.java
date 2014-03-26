@@ -1,4 +1,4 @@
-package clientApp;
+package client;
 
 import java.awt.*;
 
