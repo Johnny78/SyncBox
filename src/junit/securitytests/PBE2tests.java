@@ -33,20 +33,20 @@ public class PBE2tests {
 		bw.close();
 	}
 	
-	@Ignore
+	@Test
 	public void testEncrypt() throws Exception {
-		File f = new File("client\\syncBox\\t.mkv");
-		//createClientFile();
+		//File f = new File("client\\syncBox\\t.mkv");
+		createClientFile();
 		PBE2 passBased = new PBE2(password);	
-		passBased.encrypt(f);
+		passBased.encrypt(file);
 	}
 	
 	@Test
 	public void testDecrypt() throws Exception{
-		File f = new File("client\\syncBox\\t.mkv.encrypted");
-		//File f = new File("client\\syncBox\\file.txt.encrypted");
+		//File f = new File("client\\syncBox\\t.mkv.encrypted");
+		file = new File("client\\syncBox\\file.txt.AES");
 		PBE2 passBased = new PBE2(password);	
-		passBased.decrypt(f);
+		passBased.decrypt(file);
 	}
 	
 }
