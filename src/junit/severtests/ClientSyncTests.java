@@ -272,4 +272,11 @@ public void tsyncDeleteFromClient() throws Exception {
 		new File("client\\ServerMetaData.xml").delete();
 		new File("client\\deleted.obj").delete();
 	}
+	
+	@Test
+	public void tencyptSync() throws Exception{
+		ClientControl client = new ClientControl (ip, port);
+		client.encryptSync();
+		//client.decryptSync();
+	}
 }

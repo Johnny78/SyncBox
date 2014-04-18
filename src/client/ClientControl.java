@@ -14,11 +14,15 @@ import java.io.ObjectInputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 
+import security.PBE2;
 import xmltools.XMLTool;
 
-
+//test
 public class ClientControl {
+
+	private char[] password;
 
 	private String serverAddress;
 	private int serverPort;
@@ -26,6 +30,10 @@ public class ClientControl {
 	private DataOutputStream outToServer;
 	private DataInputStream dis;
 	private BufferedReader inFromServer;
+	
+	String syncBoxPath = "client\\syncBox\\";
+	String clearPath = "client\\clearBox\\";
+	static final String EXTENTION = ".aes";
 
 	public ClientControl(String serverAddress, int serverPort) throws Exception{
 		this.serverAddress = serverAddress;
@@ -54,8 +62,8 @@ public class ClientControl {
 			fileOuputStream.write(data);
 			fileOuputStream.close();
 			System.out.println(len + " bytes of metadata recieved");
-			
-			
+
+
 			outToServer.writeBytes("get deleted\n");
 			len = dis.readInt();
 			data = new byte[len];
@@ -133,7 +141,7 @@ public class ClientControl {
 				outToServer = new DataOutputStream(clientSocket.getOutputStream());
 				inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-				
+
 				outToServer.writeBytes("recieve file\n");	
 				String response = inFromServer.readLine();		//wait till server is ready
 				System.out.println(response);
@@ -189,7 +197,7 @@ public class ClientControl {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void deleteFileFromServerNoLog(String fileName){
 		try {
 			clientSocket = new Socket(serverAddress, serverPort);
@@ -214,7 +222,7 @@ public class ClientControl {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void deleteFileFromClient(String fileName){
 		System.out.println("Deleting file "+ fileName + " from Client");
 		File f = new File("client\\syncbox\\"+ fileName);
@@ -228,48 +236,121 @@ public class ClientControl {
 			System.out.println("Delete successful");
 		}
 	}
-	
+
 	public void sync(ArrayList<String> commands){
 		for (String c: commands){
 			String[] s = c.split(" ", 2);
 			String command = s[0];
 			String fileName = s[1];
-			
+
 			switch (command){
 			case "Import":
 				getFile(fileName);
 				break;
-				
+
 			case "Export":
 				sendFile(fileName);
 				break;
-				
+
 			case "DeleteClientCopy":
 				deleteFileFromClient(fileName);
 				break;
-				
-				
+
+
 			case "DeleteServerCopyNoLog":
 				deleteFileFromServerNoLog(fileName);
 				break;				
 			}
 		}
 	}
-	
+
 	public ArrayList<String> compareMetadata() throws Exception{
 		getServerMetaData();
 		XMLTool.generateXML("client\\syncBox");
-		
+
 		File sMetaData = new File("client\\serverMetaData.xml");
 		File cMetaData = new File("client\\metadata.xml");
-		
+
 		FileInputStream fis = new FileInputStream("client\\deleted.obj");
 		ObjectInputStream ois = new ObjectInputStream(fis);
 		ArrayList<String> deleted = (ArrayList<String>) ois.readObject();
 		ois.close();
-		
+
 		ArrayList<String> commands = XMLTool.compare(sMetaData, cMetaData, deleted);
-		
+
 		return commands;
+	}
+
+	public void encryptSync(){
+
+		File syncBox = new File(syncBoxPath);
+		ArrayList<String> cipherFiles = new ArrayList<String>(Arrays.asList(syncBox.list()));;
+		File clearBox = new File(clearPath);
+		ArrayList<String> clearFiles = new ArrayList<String>(Arrays.asList(clearBox.list()));
+
+		File clear = null;
+		File cipher = null;
+
+		for (String fileName: clearFiles){
+			clear = new File(clearPath+fileName);
+			if (cipherFiles.contains(fileName+EXTENTION)){
+				cipher = new File(syncBoxPath+fileName+EXTENTION);
+				if (clear.lastModified() >= cipher.lastModified()){
+					//encrypt clear and send to syncBox folder
+					PBE2 aesAlgo = new PBE2(password);
+					cipher.delete();
+					aesAlgo.encrypt(clear);	
+					System.out.println("re-encrypting file "+ fileName);
+				}
+				else{
+					System.out.println("no changes to "+ fileName +", do nothing.");
+				}
+				
+			}
+			else{
+				//encrypt clear and send to syncBox folder
+				PBE2 aesAlgo = new PBE2(password);
+				if (cipher != null && cipher.exists()){
+					cipher.delete();
+				}				
+				aesAlgo.encrypt(clear);					
+			}
+		}
+	}
+	
+	public void decryptSync(){
+
+		File syncBox = new File(syncBoxPath);
+		ArrayList<String> cipherFiles = new ArrayList<String>(Arrays.asList(syncBox.list()));;
+		File clearBox = new File(clearPath);
+		ArrayList<String> clearFiles = new ArrayList<String>(Arrays.asList(clearBox.list()));
+
+		File clear = null;
+		File cipher = null;
+
+		for (String fileName: cipherFiles){
+			cipher = new File(syncBoxPath+fileName);
+			String clearName = fileName.substring(0, fileName.length()-EXTENTION.length());
+			if (clearFiles.contains(clearName)){
+				clear = new File(clearPath+clearName);
+				if (clear.lastModified() <= cipher.lastModified()){
+					//decrypt cipher and send to clearBox folder
+					PBE2 aesAlgo = new PBE2(password);
+					clear.delete();
+					aesAlgo.decrypt(cipher);	
+					System.out.println("decrypting file "+ fileName);
+				}
+				else{
+					System.out.println("no changes to "+ fileName +", do nothing.");
+				}
+				
+			}
+			else{
+				//decrypt cipher and send to clearBox folder
+				PBE2 aesAlgo = new PBE2(password);				
+				aesAlgo.decrypt(cipher);		
+				System.out.println("Decrypting new file "+ fileName);
+			}
+		}
 	}
 }
