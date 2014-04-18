@@ -147,20 +147,23 @@ public class SyncBoxServer implements Serializable {
 
 						DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
 						long len = dis.readLong();
+						System.out.println("file content is of "+len +"bytes");
+
 						byte[] buff = new byte[8192];
 						int result, read = 0;
 						FileOutputStream fileOuputStream = 
 								new FileOutputStream(syncBoxDir + fileName);
-
-						do {
-							result = dis.read(buff);
-							read += result;
-							fileOuputStream.write(buff);
-							//System.out.println("read so far: "+read);
+						if (len != 0){
+							do {
+								result = dis.read(buff);
+								read += result;
+								fileOuputStream.write(buff);
+								//System.out.println("read so far: "+read);
+							}
+							while (read < len || result == -1);		
 						}
-						while (read < len && result!= -1);			
 						fileOuputStream.close();
-						System.out.println(len + " bytes recieved from file "+fileName);
+						System.out.println(read + " bytes recieved from file "+fileName);
 					}
 					catch (Exception e){
 						e.printStackTrace();
@@ -211,8 +214,8 @@ public class SyncBoxServer implements Serializable {
 						e.printStackTrace();
 					}
 					break;
-					
-					
+
+
 				case "delete file no log":
 					try{
 						outToClient.writeBytes("Server Ready\n");
